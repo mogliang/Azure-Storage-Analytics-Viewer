@@ -1,0 +1,29 @@
+﻿<Window x:Class="AzureStorageMetricsViewer.LoginWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        
+        Title="LoginWindow" Height="200" Width="400" ResizeMode="NoResize" Topmost="True" WindowStartupLocation="CenterScreen" WindowStyle="SingleBorderWindow">
+    <Grid>
+        <Grid VerticalAlignment="Center" Margin="10">
+            <Grid.RowDefinitions>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+                <RowDefinition/>
+            </Grid.RowDefinitions>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="auto"/>
+                <ColumnDefinition/>
+            </Grid.ColumnDefinitions>
+            <TextBlock Text="Storage account:" VerticalAlignment="Center"/>
+            <TextBlock Text="Storage Key:" VerticalAlignment="Center" Grid.Row="1"/>
+            <TextBox Grid.Column="1" Margin="5" Name="accountname_tb"/>
+            <TextBox Grid.Column="1" Grid.Row="1" Margin="5" Name="accountkey_tb"/>
+            <StackPanel Grid.Row="2" Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Configure Storage Analytics" Foreground="Blue" Margin="5,0,0,0" Click="link_Click_2" />
+                <Button Grid.Row="2" Content=" OK " Margin="5,0,5,0" Click="Button_Click_1" />
+            </StackPanel>
+            <TextBlock Grid.Row="3" Grid.Column="1" Name="msg_tb" HorizontalAlignment="Right" Margin="0,0,5,0"/>
+        </Grid>
+    </Grid>
+</Window>
