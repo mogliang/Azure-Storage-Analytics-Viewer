@@ -363,7 +363,7 @@ namespace AzureStorageMetricsViewer
                 "<owner-account-name>,<service-type>,<request-url>,<requested-object-key>," +
                 "<request-id-header>,<operation-count>,<requestor-ip-address>,<request-version-header>," +
                 "<request-header-size>,<request-packet-size>,<response-header-size>,<response-packet-size>," +
-                "<response-content-length>,<request-md5>,<server-md5>,<etag-identifier>,<last-modified-time>," +
+                "<request-content-length>,<request-md5>,<server-md5>,<etag-identifier>,<last-modified-time>," +
                 "<conditions-used>,<user-agent-header>,<referrer-header>,<client-request-id>";
                 
                 writer.WriteLine(header);
