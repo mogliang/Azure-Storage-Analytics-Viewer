@@ -3,6 +3,7 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:my="clr-namespace:AzureStorageMetricsViewer"
         xmlns:datavis="clr-namespace:System.Windows.Controls.DataVisualization;assembly=System.Windows.Controls.DataVisualization.Toolkit"
+        Icon="/AzureStorageAnalyticsViewer;component/Radio-Telescope.ico"
         Title="Azure Storage Analytics Viewer" Height="768" Width="1024" xmlns:chartingToolkit="clr-namespace:System.Windows.Controls.DataVisualization.Charting;assembly=System.Windows.Controls.DataVisualization.Toolkit">
     <Grid>
         <Grid.RowDefinitions>

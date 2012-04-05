@@ -102,8 +102,8 @@ namespace AzureStorageMetricsViewer
         List<MetricsTransactionsEntity> _mtes;
         public void InitializeMetricsView(StorageType type)
         {
-            //try
-            //{
+            try
+            {
                 if (_account == null)
                 {
                     MessageBox.Show("Storage account haven't been initialized");
@@ -120,11 +120,11 @@ namespace AzureStorageMetricsViewer
 
                 tl_tb.Text = string.Format("{0} - {1} {2} Metrics ({3};{4})", startdate, enddate, type,
                     access_cb.SelectedValue, trans_cb.SelectedValue);
-            //}
-            //catch (Exception ex)
-            //{
-            //    MessageBox.Show(ex.Message);
-            //}
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
         }
 
         List<MetricsTransactionsEntity> DownloadTransactionMetrics(StorageType type,DateTime startdate, DateTime enddate)
