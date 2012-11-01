@@ -503,7 +503,8 @@ namespace AzureStorageMetricsViewer
 
             var startdate = start_dp.SelectedDate.Value.Add((TimeSpan)start_cb.SelectedItem);
             var enddate = end_dp.SelectedDate.Value.Add((TimeSpan)end_cb.SelectedItem);
-            var filename = string.Format("{0}_metrics_{1}__{2}.csv",
+            var filename = string.Format("{0}_{1}_metrics_{2}__{3}.csv",
+                    _account.Credentials.AccountName,
                     _currentstoragetype,
                     startdate.ToString("yyyy_MM_dd_HHmm"),
                     enddate.ToString("yyyy_MM_dd_HHmm"));
@@ -522,6 +523,85 @@ namespace AzureStorageMetricsViewer
         }
         #endregion
 
+
+        List<MetricsTransactionsEntity> LoadMetricsFromFile(string filepath, out string error)
+        {
+            try
+            {
+                error = null;
+                var MTEstr = File.ReadAllText(filepath);
+                var MTElines = MTEstr.Split('\n');
+
+                var list = new List<MetricsTransactionsEntity>();
+                int errorcount = 0;
+                for (int i = 1; i < MTElines.Length; i++)
+                {
+                    try
+                    {
+                        var line2 = MTElines[i].Trim('\r');
+                        var cols = line2.Split(',');
+                        var item = new MetricsTransactionsEntity
+                        {
+                            PartitionKey = cols[0],
+                            RowKey = cols[1],
+                            AnonymousAuthorizationError = long.Parse(cols[2]),
+                            AnonymousClientOtherError = long.Parse(cols[3]),
+                            AnonymousClientTimeoutError = long.Parse(cols[4]),
+                            AnonymousNetworkError = long.Parse(cols[5]),
+                            AnonymousServerOtherError = long.Parse(cols[6]),
+                            AnonymousServerTimeoutError = long.Parse(cols[7]),
+                            AnonymousSuccess = long.Parse(cols[8]),
+                            AnonymousThrottlingError = long.Parse(cols[9]),
+                            AuthorizationError = long.Parse(cols[10]),
+                            Availability = double.Parse(cols[11]),
+                            AverageE2ELatency = double.Parse(cols[12]),
+                            AverageServerLatency = double.Parse(cols[13]),
+                            ClientOtherError = long.Parse(cols[14]),
+                            ClientTimeoutError = long.Parse(cols[15]),
+                            NetworkError = long.Parse(cols[16]),
+                            PercentAuthorizationError = double.Parse(cols[17]),
+                            PercentClientOtherError = double.Parse(cols[18]),
+                            PercentNetworkError = double.Parse(cols[19]),
+                            PercentServerOtherError = double.Parse(cols[20]),
+                            PercentSuccess = double.Parse(cols[21]),
+                            PercentThrottlingError = double.Parse(cols[22]),
+                            PercentTimeoutError = double.Parse(cols[23]),
+                            SASAuthorizationError = long.Parse(cols[24]),
+                            SASClientOtherError = long.Parse(cols[25]),
+                            SASClientTimeoutError = long.Parse(cols[26]),
+                            SASNetworkError = long.Parse(cols[27]),
+                            SASServerOtherError = long.Parse(cols[28]),
+                            SASServerTimeoutError = long.Parse(cols[29]),
+                            SASSuccess = long.Parse(cols[30]),
+                            SASThrottlingError = long.Parse(cols[31]),
+                            ServerOtherError = long.Parse(cols[32]),
+                            ServerTimeoutError = long.Parse(cols[33]),
+                            Success = long.Parse(cols[34]),
+                            ThrottlingError = long.Parse(cols[35]),
+                            //Time =DateTime.Parse(cols[36]),
+                            Timestamp = DateTime.Parse(cols[37]),
+                            TotalBillableRequests = long.Parse(cols[38]),
+                            TotalEgress = long.Parse(cols[39]),
+                            TotalIngress = long.Parse(cols[40]),
+                            TotalRequests = long.Parse(cols[41])
+                        };
+                        list.Add(item);
+                    }
+                    catch (Exception ex)
+                    {
+                        errorcount++;
+                        error = "Error occured when parsing some metric row. Affected rows:" + errorcount;
+                    }
+                }
+
+                return list;
+            }
+            catch (Exception ex)
+            {
+                error = "Error occured when loading metrics file.";
+                return null;
+            }
+        }
 
         private void account_tb_LostFocus(object sender, RoutedEventArgs e)
         {
@@ -584,6 +664,21 @@ namespace AzureStorageMetricsViewer
             System.Diagnostics.Process
                 .Start("http://msdn.microsoft.com/en-us/library/windowsazure/hh343270.aspx");
 
+        }
+
+        // load metric file
+        private void loadmetricfile_click(object sender, RoutedEventArgs e)
+        {
+            var ofd = new OpenFileDialog();
+            ofd.Filter = "CSV file (.csv)|*.csv";
+            var result = ofd.ShowDialog();
+            if (result != null && result.Value)
+            {
+                string error;
+                tcp1.DataContext = CompressDataPoints(LoadMetricsFromFile(ofd.FileName, out error));
+                tl_tb.Text = ofd.SafeFileName;
+                tl_tb2.Text = error;
+            }
         }
     }
 

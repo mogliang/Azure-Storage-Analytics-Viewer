@@ -70,7 +70,7 @@
                     <TextBlock Margin="5,0,0,0" Text="Storage type:" VerticalAlignment="Center"/>
                     <ComboBox Margin="5,5,5,0" Name="storage_cb" Grid.Column="1"/>
                     <TextBlock Margin="5,0,0,0" Grid.Row="1"  Text="Access type:" VerticalAlignment="Center"/>
-                    <ComboBox Margin="5,5,5,0" Name="access_cb"  Grid.Row="1" Grid.Column="1"/>
+                    <ComboBox Margin="5,5,5,0" Name="access_cb"  Grid.Row="1" Grid.Column="1" Height="21" VerticalAlignment="Top" />
                     <TextBlock Margin="5,0,0,0" Grid.Row="2"  Text="Transaction type: " VerticalAlignment="Center"/>
                     <ComboBox Margin="5,5,5,5" Grid.Row="2"  Name="trans_cb" Grid.Column="1"/>
                 </Grid>
@@ -116,6 +116,8 @@
                 <StackPanel Orientation="Horizontal" Margin="5">
                     <TextBlock Margin="0,5,5,5" VerticalAlignment="Center" Name="tl_tb" FontWeight="Bold"/>
                     <Button Content="Save Metrics to file" Margin="5" Click="Button_Click_1"/>
+                    <Button Content="Load Metrics file to Chart" Margin="5" Click="loadmetricfile_click"/>
+                    <TextBlock Margin="5,5,5,5" VerticalAlignment="Center" Name="tl_tb2" FontWeight="Bold"/>
                 </StackPanel>
             </Grid>
         </GroupBox>
