@@ -117,7 +117,7 @@
                     <TextBlock Margin="0,5,5,5" VerticalAlignment="Center" Name="tl_tb" FontWeight="Bold"/>
                     <Button Content="Save Metrics to file" Margin="5" Click="Button_Click_1"/>
                     <Button Content="Load Metrics file to Chart" Margin="5" Click="loadmetricfile_click"/>
-                    <TextBlock Margin="5,5,5,5" VerticalAlignment="Center" Name="tl_tb2" FontWeight="Bold"/>
+                    <TextBlock Margin="5,5,5,5" TextWrapping="Wrap" ToolTip="{Binding Text, ElementName=tl_tb2}" VerticalAlignment="Center" Name="tl_tb2" FontWeight="Bold"/>
                 </StackPanel>
             </Grid>
         </GroupBox>

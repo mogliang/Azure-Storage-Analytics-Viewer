@@ -21,6 +21,7 @@ using Microsoft.Win32;
 using System.ComponentModel;
 using System.IO;
 using System.Configuration;
+using System.Reflection;
 
 namespace AzureStorageMetricsViewer
 {
@@ -523,8 +524,89 @@ namespace AzureStorageMetricsViewer
         }
         #endregion
 
-
         List<MetricsTransactionsEntity> LoadMetricsFromFile(string filepath, out string error)
+        {
+            var list = new List<MetricsTransactionsEntity>();
+            try
+            {
+                int errorcount = 0;
+                error = null;
+
+                var MTEstr = File.ReadAllText(filepath);
+                var MTElines = MTEstr.Split('\n');
+
+                var titleline = MTElines[0].Trim('\r');
+                var titles = titleline.Split(',');
+
+                int rowKeyIndex = -1;
+                // remove " and find RowKey index
+                for (int i = 0; i < titles.Length; i++)
+                {
+                    titles[i] = titles[i].Trim('\"');
+                    if (titles[i] == "RowKey")
+                        rowKeyIndex = i;
+                }
+
+                for (int i = 1; i < MTElines.Length; i++)
+                {
+                    try
+                    {
+                        var line = MTElines[i].Trim('\r');
+                        if (string.IsNullOrEmpty(line))
+                            continue;
+
+                        // remove "
+                        var fields = line.Split(',');
+                        for (int j = 0; j < fields.Length; j++)
+                        {
+                            fields[j] = fields[j].Trim('\"');
+                        }
+
+                        if (titles[rowKeyIndex].Equals("RowKey") &&
+                            !fields[rowKeyIndex].Equals("user;All"))
+                            continue;
+
+                        var newitem = new MetricsTransactionsEntity();
+                        var type = newitem.GetType();
+                        for (int j = 0; j < titles.Length; j++)
+                        {
+                            PropertyInfo prop = null;
+
+                            prop = type.GetProperty(titles[j], BindingFlags.Public | BindingFlags.Instance);
+                            if (prop == null || prop.Name == "Time")
+                                continue;
+
+                            var proptype = prop.PropertyType;
+                            object value = fields[j];
+                            if (proptype != typeof(string))
+                            {
+                                var methods = proptype.GetMethods(BindingFlags.Static | BindingFlags.Public);
+                                var method = proptype.GetMethod("Parse",
+                                    new Type[] { typeof(string) });
+                                value = method.Invoke(null, new object[] { value });
+                            }
+                            prop.SetValue(newitem, value, null);
+
+                        }
+                        list.Add(newitem);
+                    }
+                    catch
+                    {
+                        errorcount++;
+                        error = "Error occured when parsing some metric row. Affected rows:" + errorcount;
+                    }
+                }
+
+                return list;
+            }
+            catch(Exception ex)
+            {
+                error = "Error occured: " + ex.Message;
+                return list;
+            }
+        }
+
+        List<MetricsTransactionsEntity> LoadMetricsFromFile2(string filepath, out string error)
         {
             try
             {
