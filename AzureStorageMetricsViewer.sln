@@ -3,6 +3,13 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Visual Studio 2010
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AzureStorageMetricsViewer", "AzureStorageMetricsViewer\AzureStorageMetricsViewer.csproj", "{4C8E25FD-5C7A-405D-9AFB-94D0E7C52191}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Referenced DLL", "Referenced DLL", "{3513631A-ECFF-4965-A57D-E85D92E09B2C}"
+	ProjectSection(SolutionItems) = preProject
+		Referenced DLL\Microsoft.WindowsAzure.StorageClient.dll = Referenced DLL\Microsoft.WindowsAzure.StorageClient.dll
+		Referenced DLL\System.Windows.Controls.DataVisualization.Toolkit.dll = Referenced DLL\System.Windows.Controls.DataVisualization.Toolkit.dll
+		Referenced DLL\WPFToolkit.dll = Referenced DLL\WPFToolkit.dll
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

@@ -84,9 +84,9 @@ namespace AzureStorageMetricsViewer.Entities
             ret.PercentServerOtherError = (this.PercentServerOtherError + b.PercentServerOtherError) / 2;
             ret.PercentSuccess = (this.PercentSuccess + b.PercentSuccess) / 2;
 
-            ret.AverageE2ELatency = (this.AverageE2ELatency + b.AverageE2ELatency) / 2;
-            ret.AverageServerLatency = (this.AverageServerLatency + b.AverageServerLatency) / 2;
-            ret.Availability = (this.Availability + b.Availability) / 2;
+            ret.AverageE2ELatency = (this.AverageE2ELatency * this.TotalRequests + b.AverageE2ELatency * b.TotalRequests) / (this.TotalRequests + b.TotalRequests);
+            ret.AverageServerLatency = (this.AverageServerLatency * this.TotalRequests + b.AverageServerLatency * b.TotalRequests) / (this.TotalRequests + b.TotalRequests);
+            ret.Availability = (this.Availability * this.TotalRequests + b.Availability * b.TotalRequests) / (this.TotalRequests + b.TotalRequests);
 
             ret.Success = this.Success + b.Success;
             ret.AnonymousSuccess = this.AnonymousSuccess + b.AnonymousSuccess;

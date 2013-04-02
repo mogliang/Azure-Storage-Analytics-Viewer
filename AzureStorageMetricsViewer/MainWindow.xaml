@@ -113,12 +113,22 @@
                     <my:TimelineChart Grid.Row="1"  x:Name="tlc2" EntityList="{Binding}"  SelectionChanged="tlc1_SelectionChanged"/>
                     <my:TimelineChart Grid.Row="2"  x:Name="tlc3" EntityList="{Binding}"  SelectionChanged="tlc1_SelectionChanged"/>
                 </Grid>
-                <StackPanel Orientation="Horizontal" Margin="5">
-                    <TextBlock Margin="0,5,5,5" VerticalAlignment="Center" Name="tl_tb" FontWeight="Bold"/>
-                    <Button Content="Save Metrics to file" Margin="5" Click="Button_Click_1"/>
-                    <Button Content="Load Metrics file to Chart" Margin="5" Click="loadmetricfile_click"/>
-                    <TextBlock Margin="5,5,5,5" TextWrapping="Wrap" ToolTip="{Binding Text, ElementName=tl_tb2}" VerticalAlignment="Center" Name="tl_tb2" FontWeight="Bold"/>
-                </StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Grid.Column="0" Orientation="Horizontal" Margin="5">
+                        <TextBlock Margin="5,0,0,0" Grid.Row="2"  Text="Transaction type: " VerticalAlignment="Center"/>
+                        <ComboBox Margin="5,5,5,5" Grid.Row="2"  Name="trans_cb2" Grid.Column="1"/>
+                        <TextBlock Margin="5,5,5,5" TextWrapping="Wrap" ToolTip="{Binding Text, ElementName=tl_tb2}" VerticalAlignment="Center" Name="tl_tb2" FontWeight="Bold"/>
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Orientation="Horizontal" Margin="5" HorizontalAlignment="Right">
+                        <TextBlock Margin="0,5,5,5" VerticalAlignment="Center" Name="tl_tb" FontWeight="Bold"/>
+                        <Button Content="Save Metrics to file" Margin="5" Click="Button_Click_1"/>
+                        <Button Content="Load Metrics file to Chart" Margin="5,5,0,5" Click="loadmetricfile_click"/>
+                    </StackPanel>
+                </Grid>
             </Grid>
         </GroupBox>
 
