@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.AccessControl;
 using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Data;
@@ -63,9 +66,8 @@ namespace AzureStorageAnalyticsViewer
             tlc1.AddSeries("TotalRequests");
             tlc1.AddSeries("TotalBillableRequests");
             tlc1.AddSeries("Success");
-            tlc2.AddSeries("AverageE2ELatency");
-            tlc2.AddSeries("AverageServerLatency");
-            tlc3.AddSeries("Availability");
+            tlc2.AddSeries("ServerTimeoutError");
+            tlc3.AddSeries("ThrottlingError");
         }
 
         List<MetricsTransactionsEntity> CompressDataPoints(List<MetricsTransactionsEntity> orilist)
@@ -219,6 +221,61 @@ namespace AzureStorageAnalyticsViewer
             return retstr;
         }
 
+        /// <summary>
+        /// Splits a <see cref="List{T}"/> into multiple chunks.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="list">The list to be chunked.</param>
+        /// <param name="chunkSize">The size of each chunk.</param>
+        /// <returns>A list of chunks.</returns>
+        public static List<List<T>> SplitIntoChunks<T>(List<T> list, int chunkSize)
+        {
+            if (chunkSize <= 0)
+            {
+                throw new ArgumentException("chunkSize must be greater than 0.");
+            }
+
+            List<List<T>> retVal = new List<List<T>>();
+            int index = 0;
+            while (index < list.Count)
+            {
+                int count = list.Count - index > chunkSize ? chunkSize : list.Count - index;
+                retVal.Add(list.GetRange(index, count));
+
+                index += chunkSize;
+            }
+
+            return retVal;
+        }
+
+        private string GetSizeLabel(long sizeBytes)
+        {
+            
+            long gbyte = 1073741824;
+            long kbyte = 1024;
+            long mbyte = 1048576;
+            long pbyte = 1125899906842624;
+            long tbyte = 1099511627776;
+            string suffix = "Kb";
+            if (sizeBytes >gbyte)
+            {
+                suffix = "Gb";
+                sizeBytes = sizeBytes / 1024 / 1024 / 1024;
+
+            }else if (sizeBytes > mbyte)
+            {
+                suffix = "Mb";
+                sizeBytes = sizeBytes / 1024 / 1024;
+            }
+            else if (sizeBytes > kbyte)
+            {
+                suffix = "Kb";
+                sizeBytes = sizeBytes / 1024;
+            }
+            return string.Format("{0}{1}", sizeBytes, suffix);
+
+        }
+
         #region Download Log
         // download log
         private void Button_Click(object sender, RoutedEventArgs e)
@@ -261,11 +318,9 @@ namespace AzureStorageAnalyticsViewer
 
             startdatestr = "$logs/" + curtypestr + startdate.ToString("/yyyy/MM/dd/HHmm");
             enddatestr = "$logs/" + curtypestr + enddate.ToString("/yyyy/MM/dd/HHmm");
-            filename = string.Format("{0}_{1}_logging_{2}__{3}",
+            filename = string.Format("{0}_{1}_logging_",
                 _account.Credentials.AccountName,
-                curtypestr,
-                startdate.ToString("yyyy_MM_dd_HHmm"),
-                enddate.ToString("yyyy_MM_dd_HHmm"));
+                curtypestr);
 
             // format
             if (csvrb.IsChecked.HasValue && csvrb.IsChecked.Value)
@@ -303,6 +358,18 @@ namespace AzureStorageAnalyticsViewer
             }
 
             var dialog = new System.Windows.Forms.FolderBrowserDialog();
+
+            var payLoadMb = filteritems.Sum(p => p.Properties.Length);
+            StringBuilder description = new StringBuilder();
+            description.AppendFormat(
+                "WARNING: You are about to download {0} of logs for the {1}/{2} storage account.", GetSizeLabel(payLoadMb),
+                _account.Credentials.AccountName, curtypestr);
+            description.AppendLine();
+            description.AppendFormat("Log data FROM {0}-{1}", startdate.ToString("dd.MMM.yyyy HH:mm"), enddate.ToString("dd.MMM.yyyy HH:mm"));
+            description.AppendLine();
+            description.AppendFormat("Choose a folder with at least {0}.", GetSizeLabel(payLoadMb));
+            dialog.Description = description.ToString();
+
             if (dialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
             {
                 BackgroundWorker bw = new BackgroundWorker();
@@ -343,86 +410,82 @@ namespace AzureStorageAnalyticsViewer
             var objs = e.Argument as object[];
             var blobs = objs[0] as List<CloudBlob>;
             var filename = objs[1] as string;
+            bool outputToCsv = filename.EndsWith(".csv");
 
             // max log size
             int filemaxsize = 50;
             int.TryParse(ConfigurationManager.AppSettings["logsizeinmb"], out filemaxsize);
+            int maxDegreeOfParallelism = 1;
+            int.TryParse(ConfigurationManager.AppSettings["maxDegreeOfParallelism"], out maxDegreeOfParallelism);
             filemaxsize *= (1024 * 1024);
 
-            Stream fs = File.Open(filename, FileMode.Create);
-            StreamWriter writer = new StreamWriter(fs);
-
             int filecount = 1;
-            int sizecount = 0;
+            long sizecount = 0;
 
-            if (filename.EndsWith(".csv"))
+            //header
+            string header = "<version-number>,<request-start-time>,<operation-type>," +
+            "<request-status>,<http-status-code>,<end-to-end-latency-in-ms>," +
+            "<server-latency-in-ms>,<authentication-type>,<requestor-account-name>," +
+            "<owner-account-name>,<service-type>,<request-url>,<requested-object-key>," +
+            "<request-id-header>,<operation-count>,<requestor-ip-address>,<request-version-header>," +
+            "<request-header-size>,<request-packet-size>,<response-header-size>,<response-packet-size>," +
+            "<request-content-length>,<request-md5>,<server-md5>,<etag-identifier>,<last-modified-time>," +
+            "<conditions-used>,<user-agent-header>,<referrer-header>,<client-request-id>";
+            
+            List<List<CloudBlob>> cluster = new List<List<CloudBlob>>();
+            List<CloudBlob> ret = new List<CloudBlob>();
+
+            for (int i = 0; i < blobs.Count; i++)
             {
-                //header
-                string header = "<version-number>,<request-start-time>,<operation-type>," +
-                "<request-status>,<http-status-code>,<end-to-end-latency-in-ms>," +
-                "<server-latency-in-ms>,<authentication-type>,<requestor-account-name>," +
-                "<owner-account-name>,<service-type>,<request-url>,<requested-object-key>," +
-                "<request-id-header>,<operation-count>,<requestor-ip-address>,<request-version-header>," +
-                "<request-header-size>,<request-packet-size>,<response-header-size>,<response-packet-size>," +
-                "<request-content-length>,<request-md5>,<server-md5>,<etag-identifier>,<last-modified-time>," +
-                "<conditions-used>,<user-agent-header>,<referrer-header>,<client-request-id>";
-                
+                var blob = blobs[i];
+
+                // split file
+                if (sizecount + blob.Properties.Length >= filemaxsize)
+                {
+                    cluster.Add(ret);
+                    ret = new List<CloudBlob>();
+                    filecount++;
+                    sizecount = 0;
+                }
+                ret.Add(blob);
+                sizecount += blob.Properties.Length;
+            }
+            cluster.Add(ret);
+
+            ParallelOptions pOptions = new ParallelOptions();
+            pOptions.MaxDegreeOfParallelism = maxDegreeOfParallelism;
+            int increment = 0;
+            Parallel.For(0, cluster.Count(), pOptions, i =>
+            {
+                CloudBlob[] pBlobs = cluster[i].ToArray();
+                var first = pBlobs.First().Properties.LastModifiedUtc.ToString("yyyyMMdd-HHmmss");
+                var last = pBlobs.Last().Properties.LastModifiedUtc.ToString("yyyyMMdd-HHmmss");
+                var fname = filename.Substring(0, filename.Length - 4);
+                string outputCsvName = string.Format("{0}_{1}_{2}.{3}", fname, first, last,
+                    outputToCsv ? "csv" : "log"); 
+                    
+                Stream fs = File.Open(outputCsvName, FileMode.Create);
+                StreamWriter writer = new StreamWriter(fs);
                 writer.WriteLine(header);
-                for (int i = 0; i < blobs.Count; i++)
+                    
+                for (int x = 0; x < pBlobs.Count() ; x++)
                 {
-                    // split file
-                    if (sizecount >= filemaxsize)
-                    {
-                        writer.Close();
-                        fs.Close();
-
-                        fs = File.Open(
-                            filename.Substring(0, filename.Length - 4) + "_" + filecount + ".csv",
-                            FileMode.Create);
-                        writer = new StreamWriter(fs);
-
-                        writer.WriteLine(header);
-                        filecount++;
-                        sizecount = 0;
-                    }
-
-                    var blob = blobs[i];
-                    var logstring = blob.DownloadText();
-                    logstring = logstring.Replace(';', ',');
+                    var blob = pBlobs[x];
+                    var logstring = outputToCsv ? new StringBuilder(blob.DownloadText()).Replace(';', ',').ToString()
+                                                : blob.DownloadText();
                     writer.Write(logstring);
-                    sizecount += logstring.Length;
-                    bw.ReportProgress(i * 100 / blobs.Count);
                 }
-            }
-            else
-            {
-                for (int i = 0; i < blobs.Count; i++)
-                {
-                    // split file
-                    if (sizecount >= filemaxsize)
-                    {
-                        writer.Close();
-                        fs.Close();
+                writer.Close();
+                fs.Close();
+                
+                Interlocked.Add(ref increment, pBlobs.Count());
+                Interlocked.Increment(ref increment);
+                bw.ReportProgress(increment * 100 / blobs.Count());
 
-                        fs = File.Open(
-                            filename.Substring(0, filename.Length - 4) + "_" + filecount + ".log",
-                            FileMode.Create);
-
-                        filecount++;
-                        sizecount = 0;
-                    }
-
-                    var blob = blobs[i];
-                    var logstring = blob.DownloadText();
-                    writer.Write(logstring);
-                    bw.ReportProgress(i * 100 / blobs.Count);
-                }
-            }
+            });
 
             bw.ReportProgress(100);
 
-            writer.Close();
-            fs.Close();
         }
         #endregion
 
@@ -696,13 +759,13 @@ namespace AzureStorageAnalyticsViewer
                         _account = new CloudStorageAccount(
                         new StorageCredentialsAccountAndKey(
                             account_tb.Text,
-                            key_tb.Text), true);
+                            key_tb.Password), true);
                         break;
                     case 1://mc
                         _account = new CloudStorageAccount(
                             new StorageCredentialsAccountAndKey(
                                 account_tb.Text,
-                                key_tb.Text),
+                                key_tb.Password),
                                 new Uri(string.Format("https://{0}.blob.core.chinacloudapi.cn/", account_tb.Text)),
                                 new Uri(string.Format("https://{0}.queue.core.chinacloudapi.cn/", account_tb.Text)),
                                 new Uri(string.Format("https://{0}.table.core.chinacloudapi.cn/", account_tb.Text)));
