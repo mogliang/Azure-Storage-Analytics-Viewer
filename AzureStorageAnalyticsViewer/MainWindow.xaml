@@ -30,7 +30,7 @@
                     <TextBlock Margin="5,0,0,0" Text="Storage Account:" VerticalAlignment="Center"/>
                     <TextBox Margin="5,5,5,0" Name="account_tb" Grid.Column="1" LostFocus="account_tb_LostFocus"/>
                     <TextBlock Margin="5,0,0,0" Grid.Row="1" Text="Storage Key:" VerticalAlignment="Center"/>
-                    <TextBox Margin="5,5,5,0" Name="key_tb" Grid.Row="1" Grid.Column="1" LostFocus="account_tb_LostFocus"/>
+                    <PasswordBox PasswordChar="*" Margin="5,5,5,0" Name="key_tb" Grid.Row="1" Grid.Column="1" LostFocus="account_tb_LostFocus"/>
                     <TextBlock IsHitTestVisible="False" Name="storagemsg" Margin="5,0,0,0" Grid.RowSpan="2" Grid.Column="1" VerticalAlignment="Center"/>
 
                     <TextBlock Margin="5,0,0,0" Grid.Row="2" Text="Storage Type:" VerticalAlignment="Center"/>
