@@ -3,8 +3,8 @@
 Azure storage analytics is a very useful feature. It can help to isolate and debug Storage related issue. However, the metrics and log is not quite readable for users.
 
 Azure Storage analytics viewer is a powerful tool which can make the analytics data eaiser to fetch and view. Features are listed below:
-- Retrive the log data based on given time range and save to Excel format for further mining.
-- Show the metrics data in chart, so that it can be more readable
+- Retrive the log data based on given time range and save to Excel format for further analysis.
+- Plotting the storage metrics.
 - Some simple filter option.
 
 Binary download link:
